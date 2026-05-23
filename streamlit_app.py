@@ -1,54 +1,12 @@
-import base64
+import streamlit as st
 import pandas as pd
 import numpy as np
-import streamlit as st
 
-# =====================================================
-# 1. PAGE CONFIG & UNIFIED DEEP METALLIC THEME
-# =====================================================
-st.set_page_config(
-    page_title="Namma MBBS – PG NEET Predictor",
-    page_icon="🏥",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="Namma MBBS Intelligence System", layout="wide")
 
-# Hide default white headers and background decoration elements
-st.markdown("""
-    <style>
-    header[data-testid="stHeader"] { background: #0D1B2E !important; }
-    [data-testid="stDecoration"] { display: none !important; }
-    </style>
-""", unsafe_allow_html=True)
-
-# Injecting Global CSS Architecture from your UG App Engine
+# Custom Input Text Visibility & Styling CSS
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800;900&display=swap');
-
-html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
-
-/* Background Canvas styling */
-.stApp { background: linear-gradient(160deg, #0D1B2E 0%, #1A2F4A 40%, #0F2240 100%); min-height: 100vh; }
-
-/* Left Hand Side Menu Control Track Panel */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0A1628 0%, #152238 100%) !important;
-    border-right: 1px solid rgba(255,255,255,0.06) !important;
-}
-[data-testid="stSidebar"] * { color: rgba(255,255,255,0.85) !important; }
-[data-testid="stSidebar"] h1,[data-testid="stSidebar"] h2,[data-testid="stSidebar"] h3 { color: white !important; margin-top: 15px !important;}
-[data-testid="stSidebar"] .stSelectbox > div > div {
-    background: rgba(255,255,255,0.08) !important;
-    border: 1px solid rgba(255,255,255,0.15) !important;
-    border-radius: 10px !important; color: white !important;
-}
-
-/* User Text Entry Input Containers */
-/* ==========================================
-   PASTE THIS NEW FIXED PIECE RIGHT HERE:
-   ========================================== */
-
 /* Fixes the whited-out text inside text and number input boxes */
 input[type="text"], input[type="number"], [data-baseweb="input"] input {
     color: #FFFFFF !important;
@@ -70,6 +28,64 @@ input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
+""", unsafe_allow_html=True)
+
+@st.cache_data
+def load_data():
+    try:
+        # Targets the exact subfolder location where your CSV lives
+        df = pd.read_csv("extractor/final_cleaned.csv")
+    except FileNotFoundError:
+        # Temporary backup if file paths misbehave during sync
+        df = pd.DataFrame({
+            'college': ['KMC Mangalore'],
+            'course': ['M.D. GENERAL MEDICINE'],
+            'category': ['GM'],
+            'fees': [750000],
+            'rank': [28000],
+            'round': ['ROUND 1'],
+            'source': ['MCC']
+        })
+
+    # Clean the column names to make matching completely bulletproof
+    df.columns = df.columns.astype(str).str.strip().str.lower()
+    
+    # Dynamic Column Mapping: Connects your CSV keys directly to the dropdown fields
+    rename_dict = {}
+    for col in df.columns:
+        if 'college' in col: rename_dict[col] = 'college'
+        elif 'course' in col or 'specialty' in col: rename_dict[col] = 'course'
+        elif 'category' in col or 'quota' in col: rename_dict[col] = 'category'
+        elif 'fee' in col: rename_dict[col] = 'fees'
+        elif 'rank' in col or 'cutoff' in col: rename_dict[col] = 'rank'
+        elif 'round' in col: rename_dict[col] = 'round'
+        elif 'source' in col or 'type' in col or 'file' in col: rename_dict[col] = 'source'
+        
+    df = df.rename(columns=rename_dict)
+    
+    # Clean up formatting across text strings to prevent lookup misses
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].astype(str).str.replace('"', '', regex=False).str.strip()
+
+    if "course" in df.columns:
+        df["course"] = df["course"].astype(str).str.upper().str.replace('(', '', regex=False).str.replace(')', '', regex=False)
+    if "category" in df.columns:
+        df["category"] = df["category"].astype(str).str.upper()
+    if "college" in df.columns:
+        df["college"] = df["college"].astype(str)
+    if "round" in df.columns:
+        df["round"] = df["round"].astype(str).str.upper()
+        
+    if "source" in df.columns:
+        df["source"] = df["source"].astype(str).str.upper()
+        df["source"] = df["source"].apply(lambda x: "MCC" if "MCC" in x or "AIQ" in x else "KEA")
+    else:
+        df["source"] = "MCC"
+        
+    return df
+
+df = load_data()
 /* Glassmorphism Dashboard Metric Cards */
 .glass-card {
     background: rgba(255,255,255,0.05) !important;
