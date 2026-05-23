@@ -1,83 +1,94 @@
 import base64
 import pandas as pd
+import numpy as np
 import streamlit as st
 
 # =====================================================
-# 1. EMULATE UG CONFIG & DEEP BLUE THEME ENGINE
+# 1. PAGE CONFIG & UNIFIED DEEP METALLIC THEME
 # =====================================================
 st.set_page_config(
-    page_title="Namma MBBS - PG NEET Predictor",
+    page_title="Namma MBBS – PG NEET Predictor",
+    page_icon="🏥",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom High-End Premium Theme CSS (Emulating your uploaded UI screenshots)
+# Hide default white headers and background decoration elements
 st.markdown("""
     <style>
-        /* Deep Dashboard Metallic Navy Background */
-        .stApp {
-            background-color: #0b132b !important;
-            color: #ffffff !important;
-            font-family: 'Inter', -apple-system, sans-serif;
-        }
-        
-        /* Sidebar Restyling matching premium interface */
-        [data-testid="stSidebar"] {
-            background-color: #0f172a !important;
-            border-right: 1px solid #1e293b;
-        }
-        [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] label {
-            color: #cbd5e1 !important;
-        }
-        
-        /* Main App Header Banner Container */
-        .hero-container {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 1px solid #334155;
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        
-        /* Metric Badges Grid System (Safe, Likely, Borderline) */
-        .metric-row {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        .metric-box {
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .m-total { background-color: #1e293b; border-top: 4px solid #94a3b8; }
-        .m-safe { background-color: #064e3b; border-top: 4px solid #10b981; color: #a7f3d0; }
-        .m-likely { background-color: #14532d; border-top: 4px solid #22c55e; color: #bbf7d0; }
-        .m-border { background-color: #78350f; border-top: 4px solid #f59e0b; color: #fef3c7; }
-        .m-miss { background-color: #7f1d1d; border-top: 4px solid #ef4444; color: #fee2e2; }
-        
-        .metric-val { font-size: 24px; font-weight: 800; margin-top: 5px; }
-        .metric-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
-
-        /* Container styling for our interactive tables */
-        [data-testid="stDataFrame"] {
-            background-color: #1e293b !important;
-            padding: 10px;
-            border-radius: 16px;
-            border: 1px solid #334155;
-        }
-        
-        h2, h3 {
-            color: #f8fafc !important;
-            font-weight: 700 !important;
-        }
+    header[data-testid="stHeader"] { background: #0D1B2E !important; }
+    [data-testid="stDecoration"] { display: none !important; }
     </style>
+""", unsafe_allow_html=True)
+
+# Injecting Global CSS Architecture from your UG App Engine
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
+
+/* Background Canvas styling */
+.stApp { background: linear-gradient(160deg, #0D1B2E 0%, #1A2F4A 40%, #0F2240 100%); min-height: 100vh; }
+
+/* Left Hand Side Menu Control Track Panel */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0A1628 0%, #152238 100%) !important;
+    border-right: 1px solid rgba(255,255,255,0.06) !important;
+}
+[data-testid="stSidebar"] * { color: rgba(255,255,255,0.85) !important; }
+[data-testid="stSidebar"] h1,[data-testid="stSidebar"] h2,[data-testid="stSidebar"] h3 { color: white !important; margin-top: 15px !important;}
+[data-testid="stSidebar"] .stSelectbox > div > div {
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 10px !important; color: white !important;
+}
+
+/* User Text Entry Input Containers */
+input {
+    background-color: rgba(15, 34, 64, 0.95) !important;
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+[data-baseweb="input"] {
+    background-color: rgba(15, 34, 64, 0.95) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    border-radius: 10px !important;
+}
+[data-baseweb="input"] input {
+    background-color: transparent !important;
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+    caret-color: #F15A24 !important;
+}
+
+/* Glassmorphism Dashboard Metric Cards */
+.glass-card {
+    background: rgba(255,255,255,0.05) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+.glass-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5) !important;
+}
+
+/* Interactive Output Matrix Wrapper */
+[data-testid="stDataFrame"] {
+    border-radius: 16px !important; 
+    overflow: hidden !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* Custom Typography Colors overrides */
+h1,h2,h3,h4 { color: white !important; }
+p, span, label { color: rgba(255,255,255,0.8) !important; }
+</style>
 """, unsafe_allow_html=True)
 
 
@@ -89,7 +100,6 @@ def load_data():
     try:
         df = pd.read_csv("final_cleaned.csv")
     except FileNotFoundError:
-        # Emergency backup fallback block if file path snaps
         df = pd.DataFrame({
             'college': ['Bangalore Medical College', 'Bangalore Medical College', 'KMC Mangalore', 'St. Johns Medical College'],
             'course': ['M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE'],
@@ -110,7 +120,6 @@ def load_data():
     else:
         df["source"] = "KEA"
         
-    # Formatting cleaning steps
     df["course"] = df["course"].astype(str).str.upper().str.strip()
     df["category"] = df["category"].astype(str).str.upper().str.strip()
     df["college"] = df["college"].astype(str).str.strip()
@@ -121,29 +130,35 @@ df = load_data()
 
 
 # =====================================================
-# 3. SIDEBAR CONTROLS (STUDENT DETAILS)
+# 3. SIDEBAR CONTROLS (GROUPED CONTEXT ARCHITECTURE)
 # =====================================================
-st.sidebar.markdown("### 🎯 Student Details")
-rank = st.sidebar.number_input("Enter AIR Rank", min_value=1, max_value=300000, value=30000)
+with st.sidebar:
+    st.markdown("## 🎯 Student Details")
+    rank = st.number_input("Enter AIR Rank", min_value=1, max_value=300000, value=14000, step=100)
 
-course_options = sorted(df["course"].dropna().unique())
-course = st.sidebar.selectbox("Course Specialty", course_options)
+    course_options = sorted(df["course"].dropna().unique())
+    course = st.selectbox("Course Specialty", course_options)
+    df_course = df[df["course"] == course]
 
-# Isolate dataset base targets
-df_course = df[df["course"] == course]
+    st.divider()
+    st.markdown("## 🏛️ Counseling Details")
+    counseling_options = sorted(df_course["source"].dropna().unique())
+    counseling = st.selectbox("Counseling Type", counseling_options)
+    df_source = df_course[df_course["source"] == counseling]
 
-counseling_options = sorted(df_course["source"].dropna().unique())
-counseling = st.sidebar.selectbox("Counseling Type", counseling_options)
-df_source = df_course[df_course["source"] == counseling]
+    st.divider()
+    st.markdown("## 👥 Seat Category")
+    category_options = sorted(df_source["category"].dropna().unique())
+    category = st.selectbox("Category Quota", category_options)
 
-category_options = sorted(df_source["category"].dropna().unique())
-category = st.sidebar.selectbox("Seat Category", category_options)
-
-college_search = st.sidebar.text_input("Search College Name")
+    st.divider()
+    st.markdown("## 🔍 Advanced Filters")
+    college_search = st.text_input("Search College Name", placeholder="e.g., Bangalore Medical...")
+    near_miss = st.checkbox("Include Near Miss colleges", value=True)
 
 
 # =====================================================
-# 4. BRANDING HERO CONTAINER BLOCK
+# 4. BRANDING HERO HERO CONTAINER HEADER BLOCK
 # =====================================================
 def get_base64_image(image_path):
     try:
@@ -155,80 +170,112 @@ def get_base64_image(image_path):
 img_base64 = get_base64_image("../assets/logo.png")
 
 if img_base64:
-    st.markdown(f"""
-        <div class="hero-container">
-            <img src="data:image/png;base64,{img_base64}" width="180" style="margin-bottom: 15px;">
-            <h1 style="font-size: 32px; font-weight: 800; margin: 0; color: #ffffff;">NEET PG College Predictor</h1>
-            <p style="font-size: 14px; color: #94a3b8; margin: 5px 0 0 0;">Powered by Namma MBBS • Trusted Medical Admissions Partner</p>
-        </div>
-    """, unsafe_allow_html=True)
+    logo_img = f'<img src="data:image/png;base64,{img_base64}" style="height:120px;width:120px;object-fit:cover;border-radius:50%;border:3px solid rgba(241,90,36,0.6);box-shadow:0 8px 32px rgba(0,0,0,0.5);background:white;padding:8px;">'
 else:
-    st.markdown("""
-        <div class="hero-container">
-            <h1 style="font-size: 32px; font-weight: 800; margin: 0;">NEET PG College Predictor</h1>
-        </div>
-    """, unsafe_allow_html=True)
+    logo_img = '<div style="font-size:3rem;">🏥</div>'
 
-
-# =====================================================
-# 5. PREDICTIVE PROCESSING ENGINE
-# =====================================================
-# Filter base core logic matches
-filtered = df_source[df_source["category"] == category].copy()
-if college_search:
-    filtered = filtered[filtered["college"].str.contains(college_search, case=False, na=False)]
-
-# Create Predictive Classification Metrics based on your premium look
-def classify_chance(cutoff, user_rank):
-    if user_rank <= cutoff * 0.85: return "🟢 SAFE"
-    elif user_rank <= cutoff: return "🟢 LIKELY"
-    elif user_rank <= cutoff * 1.15: return "🟡 BORDERLINE"
-    else: return "🔴 NEAR MISS"
-
-if len(filtered) > 0:
-    filtered["chance_status"] = filtered["rank"].apply(lambda x: classify_chance(x, rank))
-    
-    # Segment totals out for analytical summary row
-    c_total = filtered["college"].nunique()
-    c_safe = filtered[filtered["chance_status"] == "🟢 SAFE"]["college"].nunique()
-    c_likely = filtered[filtered["chance_status"] == "🟢 LIKELY"]["college"].nunique()
-    c_border = filtered[filtered["chance_status"] == "🟡 BORDERLINE"]["college"].nunique()
-    c_miss = filtered[filtered["chance_status"] == "🔴 NEAR MISS"]["college"].nunique()
-else:
-    c_total = c_safe = c_likely = c_border = c_miss = 0
-
-
-# =====================================================
-# 6. RENDER TOP-LEVEL METRIC BOXES
-# =====================================================
 st.markdown(f"""
-    <div class="metric-row">
-        <div class="metric-box m-total"><div class="metric-lbl">Total Options</div><div class="metric-val">{c_total}</div></div>
-        <div class="metric-box m-safe"><div class="metric-lbl">✔ Safe</div><div class="metric-val">{c_safe}</div></div>
-        <div class="metric-box m-likely"><div class="metric-lbl">👍 Likely</div><div class="metric-val">{c_likely}</div></div>
-        <div class="metric-box m-border"><div class="metric-lbl">⚠ Borderline</div><div class="metric-val">{c_border}</div></div>
-        <div class="metric-box m-miss"><div class="metric-lbl">🚨 Near Miss</div><div class="metric-val">{c_miss}</div></div>
-    </div>
+<div style="background:linear-gradient(135deg,rgba(241,90,36,0.15) 0%,rgba(27,42,74,0.4) 50%,rgba(241,90,36,0.1) 100%);
+    backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.12);
+    border-radius:24px; padding:40px 30px; text-align:center; margin-bottom:28px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+  {logo_img}
+  <h1 style="color:white !important; font-size:2.8rem; font-weight:900; margin:14px 0 0; letter-spacing:-1px;">
+    NEET PG College Predictor
+  </h1>
+  <p style="color:rgba(255,255,255,0.6) !important; font-size:1.05rem; margin:8px 0 20px;">
+    Specialty Tracking Module &nbsp;•&nbsp; Custom Round Matrix Analytics Engine
+  </p>
+  <div style="display:inline-block;background:linear-gradient(90deg,#F15A24,#D04010);
+      color:white;padding:8px 20px;border-radius:100px;font-weight:700;font-size:0.85rem;
+      box-shadow:0 4px 20px rgba(241,90,36,0.5);">
+    ✦ Powered by Namma MBBS · Trusted Medical Admissions Partner
+  </div>
+</div>
 """, unsafe_allow_html=True)
 
 
 # =====================================================
-# 7. GENERATE MULTI-ROUND CUTOFF COMPARISON MATRIX
+# 5. PREDICTIVE PROCESSING MATCH ENGINE logic
 # =====================================================
-st.markdown("### 📊 Round-by-Round Cutoff Comparison Matrix")
+filtered = df_source[df_source["category"] == category].copy()
+if college_search:
+    filtered = filtered[filtered["college"].str.contains(college_search, case=False, na=False)]
 
-if len(filtered) == 0:
-    st.info("💡 Adjust your filters in the sidebar. No matching combination found in our historical database entries.")
-else:
-    # We aggregate data to construct the requested horizontal Round grid matrix dynamically
-    matrix_data = []
+def chance_label(user_rank, cutoff):
+    if user_rank <= cutoff:
+        m = (cutoff - user_rank) / user_rank * 100
+        if m >= 20: return "✅ Safe"
+        if m >= 5:  return "🟡 Likely"
+        return "⚠️ Borderline"
+    if (user_rank - cutoff) / user_rank * 100 <= 15: return "🔴 Near Miss"
+    return "❌ Out of Range"
+
+def color_chance(val):
+    if "Safe" in str(val): return "background-color:#0a3d1f;color:#4ade80;font-weight:700;border-radius:6px;"
+    if "Likely" in str(val): return "background-color:#3d2e00;color:#fbbf24;font-weight:700;border-radius:6px;"
+    if "Borderline" in str(val): return "background-color:#3d1500;color:#fb923c;font-weight:700;border-radius:6px;"
+    if "Near Miss" in str(val): return "background-color:#3d0a0a;color:#f87171;font-weight:700;border-radius:6px;"
+    return "color:rgba(255,255,255,0.4);"
+
+
+# =====================================================
+# 6. CARD VIEWS GENERATION AND DISPLAY ROW
+# =====================================================
+if len(filtered) > 0:
+    # Compile dynamic classifications
+    filtered["chance"] = filtered["rank"].apply(lambda x: chance_label(rank, x))
     
+    # Filter by user allowance bounds
+    allowed_chances = {"✅ Safe", "🟡 Likely", "⚠️ Borderline"}
+    if near_miss:
+        allowed_chances.add("🔴 Near Miss")
+    filtered = filtered[filtered["chance"].isin(allowed_chances)]
+
+if len(filtered) > 0:
+    total_options = filtered["college"].nunique()
+    safe_count = filtered[filtered["chance"] == "✅ Safe"]["college"].nunique()
+    likely_count = filtered[filtered["chance"] == "🟡 Likely"]["college"].nunique()
+    border_count = filtered[filtered["chance"] == "⚠️ Borderline"]["college"].nunique()
+    near_count = filtered[filtered["chance"] == "🔴 Near Miss"]["college"].nunique()
+
+    # Renders your highly attractive analytics bar natively inside the custom CSS style cards
+    st.markdown(f"""
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 0 28px 0;">
+      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #4A90D9;">
+        <div style="font-size:1.8rem;font-weight:900;color:white;">{total_options}</div>
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Total Options</div>
+      </div>
+      <div style="background:rgba(0,200,81,0.1);border:1px solid rgba(0,200,81,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #00C851;">
+        <div style="font-size:1.8rem;font-weight:900;color:#4ade80;">{safe_count}</div>
+        <div style="font-size:0.7rem;color:#4ade80;font-weight:600;text-transform:uppercase;letter-spacing:1px;">✅ Safe</div>
+      </div>
+      <div style="background:rgba(255,179,0,0.1);border:1px solid rgba(255,179,0,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #FFB300;">
+        <div style="font-size:1.8rem;font-weight:900;color:#fbbf24;">{likely_count}</div>
+        <div style="font-size:0.7rem;color:#fbbf24;font-weight:600;text-transform:uppercase;letter-spacing:1px;">🟡 Likely</div>
+      </div>
+      <div style="background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #fb923c;">
+        <div style="font-size:1.8rem;font-weight:900;color:#fb923c;">{border_count}</div>
+        <div style="font-size:0.7rem;color:#fb923c;font-weight:600;text-transform:uppercase;letter-spacing:1px;">⚠️ Borderline</div>
+      </div>
+      <div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #f87171;">
+        <div style="font-size:1.8rem;font-weight:900;color:#f87171;">{near_count}</div>
+        <div style="font-size:0.7rem;color:#f87171;font-weight:600;text-transform:uppercase;letter-spacing:1px;">🔴 Near Miss</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+    # =====================================================
+    # 7. MULTI-ROUND PIVOT DATAFRAME MATRIX MATRIX VIEW
+    # =====================================================
+    st.markdown("### 📊 Round-by-Round Cutoff Matrix")
+
+    matrix_data = []
     for college_name, group in filtered.groupby("college"):
-        # Default empty slots
         r1_val = r2_val = r3_val = stray_val = None
         fees_val = group["fees"].iloc[0] if "fees" in group.columns else 0
         
-        # Pull cutoffs for separate rounds mapped to standard rows
         for _, row in group.iterrows():
             rnd = str(row["round"])
             if "1" in rnd: r1_val = int(row["rank"])
@@ -236,38 +283,49 @@ else:
             elif "3" in rnd or "MOP" in rnd: r3_val = int(row["rank"])
             elif "STRAY" in rnd: stray_val = int(row["rank"])
             
-        # Determine consolidated display logic chance tag based on final active cutoff
-        final_cutoff = group["rank"].max()
-        overall_chance = classify_chance(final_cutoff, rank)
+        final_active_cutoff = group["rank"].max()
+        overall_chance = chance_label(rank, final_active_cutoff)
         
         matrix_data.append({
-            "Chance": overall_chance,
+            "Admission Chance": overall_chance,
             "College Name": college_name,
-            "Round 1 Cutoff": r1_val,
-            "Round 2 Cutoff": r2_val,
-            "Mop-Up Cutoff": r3_val,
-            "Stray Cutoff": stray_val,
+            "Round 1": r1_val,
+            "Round 2": r2_val,
+            "Mop-Up": r3_val,
+            "Stray": stray_val,
             "Annual Fees": int(fees_val)
         })
         
     matrix_df = pd.DataFrame(matrix_data)
+    matrix_df = matrix_df.sort_values(by="Round 1", ascending=True, na_position="last")
     
-    # Sort colleges alphabetically or by minimum cutoff rank
-    matrix_df = matrix_df.sort_values(by="Round 1 Cutoff", na_position="last")
+    # Map badge highlight colors onto the text row outputs
+    styled_df = matrix_df.style.map(color_chance, subset=["Admission Chance"])
     
-    # Implement Streamlit's DataFrame configuration layer to output a beautiful grid structure
     st.dataframe(
-        matrix_df,
+        styled_df,
         column_config={
-            "Chance": st.column_config.TextColumn("Chance", width="small"),
+            "Admission Chance": st.column_config.TextColumn("Admission Chance", width="medium"),
             "College Name": st.column_config.TextColumn("College Name", width="large"),
-            "Round 1 Cutoff": st.column_config.NumberColumn("Round 1", format="%,d"),
-            "Round 2 Cutoff": st.column_config.NumberColumn("Round 2", format="%,d"),
-            "Mop-Up Cutoff": st.column_config.NumberColumn("Mop-Up", format="%,d"),
-            "Stray Cutoff": st.column_config.NumberColumn("Stray", format="%,d"),
+            "Round 1": st.column_config.NumberColumn("Round 1", format="%,d"),
+            "Round 2": st.column_config.NumberColumn("Round 2", format="%,d"),
+            "Mop-Up": st.column_config.NumberColumn("Mop-Up", format="%,d"),
+            "Stray": st.column_config.NumberColumn("Stray", format="%,d"),
             "Annual Fees": st.column_config.NumberColumn("Annual Fees", format="₹%,d")
         },
         use_container_width=True,
-        height=550,
+        height=500,
         hide_index=True
     )
+    
+    # CSV Data Export Utility Match
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.download_button(
+        label="⬇️ Download Results CSV",
+        data=matrix_df.to_csv(index=False),
+        file_name="pg_neet_predictions.csv",
+        mime="text/csv"
+    )
+
+else:
+    st.info("💡 Adjust your sidebar filters. No matching cutoff matches this targets profile metrics currently.")
