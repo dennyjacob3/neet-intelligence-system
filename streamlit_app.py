@@ -1,12 +1,49 @@
-import streamlit as st
+import base64
 import pandas as pd
 import numpy as np
+import streamlit as st
 
-st.set_page_config(page_title="Namma MBBS Intelligence System", layout="wide")
+# =====================================================
+# 1. PAGE CONFIG & UNIFIED DEEP METALLIC THEME
+# =====================================================
+st.set_page_config(
+    page_title="Namma MBBS – PG NEET Predictor",
+    page_icon="🏥",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Custom Input Text Visibility & Styling CSS
+# Hide default white headers and background decoration elements
+st.markdown("""
+    <style>
+    header[data-testid="stHeader"] { background: #0D1B2E !important; }
+    [data-testid="stDecoration"] { display: none !important; }
+    </style>
+""", unsafe_allow_html=True)
+
+# Injecting Global CSS Architecture
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800;900&display=swap');
+
+html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
+
+/* Background Canvas styling */
+.stApp { background: linear-gradient(160deg, #0D1B2E 0%, #1A2F4A 40%, #0F2240 100%); min-height: 100vh; }
+
+/* Left Hand Side Menu Control Track Panel */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0A1628 0%, #152238 100%) !important;
+    border-right: 1px solid rgba(255,255,255,0.06) !important;
+}
+[data-testid="stSidebar"] * { color: rgba(255,255,255,0.85) !important; }
+[data-testid="stSidebar"] h1,[data-testid="stSidebar"] h2,[data-testid="stSidebar"] h3 { color: white !important; margin-top: 15px !important;}
+[data-testid="stSidebar"] .stSelectbox > div > div {
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 10px !important; color: white !important;
+}
+
 /* Fixes the whited-out text inside text and number input boxes */
 input[type="text"], input[type="number"], [data-baseweb="input"] input {
     color: #FFFFFF !important;
@@ -28,64 +65,7 @@ input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
-""", unsafe_allow_html=True)
 
-@st.cache_data
-def load_data():
-    try:
-        # Targets the exact subfolder location where your CSV lives
-        df = pd.read_csv("extractor/final_cleaned.csv")
-    except FileNotFoundError:
-        # Temporary backup if file paths misbehave during sync
-        df = pd.DataFrame({
-            'college': ['KMC Mangalore'],
-            'course': ['M.D. GENERAL MEDICINE'],
-            'category': ['GM'],
-            'fees': [750000],
-            'rank': [28000],
-            'round': ['ROUND 1'],
-            'source': ['MCC']
-        })
-
-    # Clean the column names to make matching completely bulletproof
-    df.columns = df.columns.astype(str).str.strip().str.lower()
-    
-    # Dynamic Column Mapping: Connects your CSV keys directly to the dropdown fields
-    rename_dict = {}
-    for col in df.columns:
-        if 'college' in col: rename_dict[col] = 'college'
-        elif 'course' in col or 'specialty' in col: rename_dict[col] = 'course'
-        elif 'category' in col or 'quota' in col: rename_dict[col] = 'category'
-        elif 'fee' in col: rename_dict[col] = 'fees'
-        elif 'rank' in col or 'cutoff' in col: rename_dict[col] = 'rank'
-        elif 'round' in col: rename_dict[col] = 'round'
-        elif 'source' in col or 'type' in col or 'file' in col: rename_dict[col] = 'source'
-        
-    df = df.rename(columns=rename_dict)
-    
-    # Clean up formatting across text strings to prevent lookup misses
-    for col in df.columns:
-        if df[col].dtype == object:
-            df[col] = df[col].astype(str).str.replace('"', '', regex=False).str.strip()
-
-    if "course" in df.columns:
-        df["course"] = df["course"].astype(str).str.upper().str.replace('(', '', regex=False).str.replace(')', '', regex=False)
-    if "category" in df.columns:
-        df["category"] = df["category"].astype(str).str.upper()
-    if "college" in df.columns:
-        df["college"] = df["college"].astype(str)
-    if "round" in df.columns:
-        df["round"] = df["round"].astype(str).str.upper()
-        
-    if "source" in df.columns:
-        df["source"] = df["source"].astype(str).str.upper()
-        df["source"] = df["source"].apply(lambda x: "MCC" if "MCC" in x or "AIQ" in x else "KEA")
-    else:
-        df["source"] = "MCC"
-        
-    return df
-
-df = load_data()
 /* Glassmorphism Dashboard Metric Cards */
 .glass-card {
     background: rgba(255,255,255,0.05) !important;
@@ -122,34 +102,57 @@ p, span, label { color: rgba(255,255,255,0.8) !important; }
 @st.cache_data
 def load_data():
     try:
-        # Assumes your cleaned csv repository dataset is sitting at root
-        df = pd.read_csv("final_cleaned.csv")
+        # Pulls data securely from your nested folder position
+        df = pd.read_csv("extractor/final_cleaned.csv")
     except FileNotFoundError:
-        # Fallback demonstration dataset tracking matrix elements
+        # Temporary internal backup fallback layout
         df = pd.DataFrame({
-            'college': ['Bangalore Medical College', 'Bangalore Medical College', 'KMC Mangalore', 'St. Johns Medical College'],
-            'course': ['M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE'],
-            'category': ['GM', 'GM', 'GM', 'GM'],
-            'fees': [115000, 115000, 750000, 115000],
-            'rank': [12000, 15500, 28000, 14000],
-            'round': ['Round 1', 'Round 2', 'Round 1', 'Mop-up'],
-            'source_file': ['KEA_PG_2025', 'KEA_PG_2025', 'MCC_AIQ_2025', 'KEA_PG_2025']
+            'college': ['Bangalore Medical College', 'KMC Mangalore'],
+            'course': ['M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE'],
+            'category': ['GM', 'GM'],
+            'fees': [115000, 750000],
+            'rank': [12000, 28000],
+            'round': ['ROUND 1', 'ROUND 2'],
+            'source': ['KEA', 'MCC']
         })
 
+    # Standardize column headers for reliable parsing
     df.columns = df.columns.astype(str).str.strip().str.lower()
     
-    if "source_file" in df.columns:
-        df["source"] = df["source_file"].astype(str).str.upper()
-        df["source"] = df["source"].apply(
-            lambda x: "MCC" if ("MCC" in x or "AIQ" in x or "ALL INDIA" in x) else "KEA"
-        )
-    else:
-        df["source"] = "KEA"
+    # Keyword translation engine to map your CSV keys perfectly
+    rename_dict = {}
+    for col in df.columns:
+        if 'college' in col: rename_dict[col] = 'college'
+        elif 'course' in col or 'specialty' in col: rename_dict[col] = 'course'
+        elif 'category' in col or 'quota' in col: rename_dict[col] = 'category'
+        elif 'fee' in col: rename_dict[col] = 'fees'
+        elif 'rank' in col or 'cutoff' in col: rename_dict[col] = 'rank'
+        elif 'round' in col: rename_dict[col] = 'round'
+        elif 'type' in col or 'source' in col or 'file' in col: rename_dict[col] = 'source'
         
-    df["course"] = df["course"].astype(str).str.upper().str.strip()
-    df["category"] = df["category"].astype(str).str.upper().str.strip()
-    df["college"] = df["college"].astype(str).str.strip()
-    df["round"] = df["round"].astype(str).str.strip().str.upper()
+    df = df.rename(columns=rename_dict)
+    
+    # Strip lingering double-quotes out of dataset rows
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].astype(str).str.replace('"', '', regex=False).str.strip()
+
+    # Apply global string transformations
+    if "course" in df.columns:
+        df["course"] = df["course"].astype(str).str.upper().str.replace('(', '', regex=False).str.replace(')', '', regex=False)
+    if "category" in df.columns:
+        df["category"] = df["category"].astype(str).str.upper()
+    if "college" in df.columns:
+        df["college"] = df["college"].astype(str)
+    if "round" in df.columns:
+        df["round"] = df["round"].astype(str).str.upper()
+        
+    if "source" in df.columns:
+        df["source"] = df["source"].astype(str).str.upper()
+        df["source"] = df["source"].apply(lambda x: "MCC" if "MCC" in x or "AIQ" in x else "KEA")
+    else:
+        df["source"] = "MCC"
+        
     return df
 
 df = load_data()
@@ -160,22 +163,21 @@ df = load_data()
 # =====================================================
 with st.sidebar:
     st.markdown("## 🎯 Student Details")
-    # Setting an explicit key ensures state reactivity works correctly on the cloud server
     rank = st.number_input("Enter AIR Rank", min_value=1, max_value=300000, value=14000, step=100, key="pg_user_rank")
 
-    course_options = sorted(df["course"].dropna().unique())
+    course_options = sorted(df["course"].dropna().unique()) if "course" in df.columns else []
     course = st.selectbox("Course Specialty", course_options, key="pg_user_course")
-    df_course = df[df["course"] == course]
+    df_course = df[df["course"] == course] if "course" in df.columns else df
 
     st.divider()
     st.markdown("## 🏛️ Counseling Details")
-    counseling_options = sorted(df_course["source"].dropna().unique())
+    counseling_options = sorted(df_course["source"].dropna().unique()) if "source" in df_course.columns else ["MCC"]
     counseling = st.selectbox("Counseling Type", counseling_options, key="pg_user_source")
-    df_source = df_course[df_course["source"] == counseling]
+    df_source = df_course[df_course["source"] == counseling] if "source" in df_course.columns else df_course
 
     st.divider()
     st.markdown("## 👥 Seat Category")
-    category_options = sorted(df_source["category"].dropna().unique())
+    category_options = sorted(df_source["category"].dropna().unique()) if "category" in df_source.columns else []
     category = st.selectbox("Category Quota", category_options, key="pg_user_cat")
 
     st.divider()
@@ -194,7 +196,6 @@ def get_base64_image(image_path):
     except:
         return None
 
-# Looking for logo file in root or common assets structures
 img_base64 = get_base64_image("logo.png") or get_base64_image("assets/logo.png")
 
 if img_base64:
@@ -226,17 +227,21 @@ st.markdown(f"""
 # =====================================================
 # 5. PREDICTIVE PROCESSING MATCH ENGINE LOGIC
 # =====================================================
-filtered = df_source[df_source["category"] == category].copy()
+filtered = df_source[df_source["category"] == category].copy() if "category" in df_source.columns else df_source.copy()
 if college_search:
     filtered = filtered[filtered["college"].str.contains(college_search, case=False, na=False)]
 
 def chance_label(user_rank, cutoff):
-    if user_rank <= cutoff:
-        m = (cutoff - user_rank) / user_rank * 100
+    try:
+        cutoff_val = float(cutoff)
+    except:
+        return "❌ Out of Range"
+    if user_rank <= cutoff_val:
+        m = (cutoff_val - user_rank) / user_rank * 100
         if m >= 20: return "✅ Safe"
         if m >= 5:  return "🟡 Likely"
         return "⚠️ Borderline"
-    if (user_rank - cutoff) / user_rank * 100 <= 15: return "🔴 Near Miss"
+    if (user_rank - cutoff_val) / user_rank * 100 <= 15: return "🔴 Near Miss"
     return "❌ Out of Range"
 
 def color_chance(val):
@@ -250,24 +255,21 @@ def color_chance(val):
 # =====================================================
 # 6. CARD VIEWS GENERATION AND DISPLAY ROW
 # =====================================================
-if len(filtered) > 0:
-    # Compile dynamic classifications
+if len(filtered) > 0 and "rank" in filtered.columns:
     filtered["chance"] = filtered["rank"].apply(lambda x: chance_label(rank, x))
     
-    # Filter by user allowance bounds
     allowed_chances = {"✅ Safe", "🟡 Likely", "⚠️ Borderline"}
     if near_miss:
         allowed_chances.add("🔴 Near Miss")
     filtered = filtered[filtered["chance"].isin(allowed_chances)]
 
 if len(filtered) > 0:
-    total_options = filtered["college"].nunique()
-    safe_count = filtered[filtered["chance"] == "✅ Safe"]["college"].nunique()
-    likely_count = filtered[filtered["chance"] == "🟡 Likely"]["college"].nunique()
-    border_count = filtered[filtered["chance"] == "⚠️ Borderline"]["college"].nunique()
-    near_count = filtered[filtered["chance"] == "🔴 Near Miss"]["college"].nunique()
+    total_options = filtered["college"].nunique() if "college" in filtered.columns else 0
+    safe_count = filtered[filtered["chance"] == "✅ Safe"]["college"].nunique() if "college" in filtered.columns else 0
+    likely_count = filtered[filtered["chance"] == "🟡 Likely"]["college"].nunique() if "college" in filtered.columns else 0
+    border_count = filtered[filtered["chance"] == "⚠️ Borderline"]["college"].nunique() if "college" in filtered.columns else 0
+    near_count = filtered[filtered["chance"] == "🔴 Near Miss"]["college"].nunique() if "college" in filtered.columns else 0
 
-    # Renders your highly attractive analytics bar natively inside the custom CSS style cards
     st.markdown(f"""
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 0 28px 0;">
       <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #4A90D9;">
@@ -293,7 +295,6 @@ if len(filtered) > 0:
     </div>
     """, unsafe_allow_html=True)
 
-
     # =====================================================
     # 7. MULTI-ROUND PIVOT DATAFRAME MATRIX VIEW
     # =====================================================
@@ -306,55 +307,4 @@ if len(filtered) > 0:
         
         for _, row in group.iterrows():
             rnd = str(row["round"]).upper()
-            if "1" in rnd: r1_val = int(row["rank"])
-            elif "2" in rnd: r2_val = int(row["rank"])
-            elif "3" in rnd or "MOP" in rnd: r3_val = int(row["rank"])
-            elif "STRAY" in rnd: stray_val = int(row["rank"])
-            
-        final_active_cutoff = group["rank"].max()
-        overall_chance = chance_label(rank, final_active_cutoff)
-        
-        matrix_data.append({
-            "Admission Chance": overall_chance,
-            "College Name": college_name,
-            "Round 1": r1_val,
-            "Round 2": r2_val,
-            "Mop-Up": r3_val,
-            "Stray": stray_val,
-            "Annual Fees": int(fees_val)
-        })
-        
-    matrix_df = pd.DataFrame(matrix_data)
-    matrix_df = matrix_df.sort_values(by="Round 1", ascending=True, na_position="last")
-    
-    # Map badge highlight colors onto the text row outputs
-    styled_df = matrix_df.style.map(color_chance, subset=["Admission Chance"])
-    
-    st.dataframe(
-        styled_df,
-        column_config={
-            "Admission Chance": st.column_config.TextColumn("Admission Chance", width="medium"),
-            "College Name": st.column_config.TextColumn("College Name", width="large"),
-            "Round 1": st.column_config.NumberColumn("Round 1", format="%,d"),
-            "Round 2": st.column_config.NumberColumn("Round 2", format="%,d"),
-            "Mop-Up": st.column_config.NumberColumn("Mop-Up", format="%,d"),
-            "Stray": st.column_config.NumberColumn("Stray", format="%,d"),
-            "Annual Fees": st.column_config.NumberColumn("Annual Fees", format="₹%,d")
-        },
-        use_container_width=True,
-        height=500,
-        hide_index=True
-    )
-    
-    # CSV Data Export Utility Match
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.download_button(
-        label="⬇️ Download Results CSV",
-        data=matrix_df.to_csv(index=False),
-        file_name="pg_neet_predictions.csv",
-        mime="text/csv",
-        key="pg_download_btn"
-    )
-
-else:
-    st.info("💡 Adjust your sidebar filters. No matching cutoff targets match this profile currently.")
+            try:
