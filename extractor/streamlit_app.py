@@ -71,7 +71,7 @@ st.markdown("""
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_csv("extractor/final_cleaned.csv")
+       df = pd.read_csv("final_cleaned.csv")
     except FileNotFoundError:
         df = pd.DataFrame({
             'college': ['Bangalore Medical College', 'KMC Mangalore', 'St. Johns Medical College', 'JSS Medical College'],
@@ -138,7 +138,7 @@ def get_base64_image(image_path):
     except FileNotFoundError:
         return None
 
-img_base64 = get_base64_image("assets/logo.png")
+img_base64 = get_base64_image("../assets/logo.png")
 
 if img_base64:
     st.markdown(
