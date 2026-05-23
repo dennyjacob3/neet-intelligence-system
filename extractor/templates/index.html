@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Namma MBBS Internal Tool</title>
+
+    <style>
+
+        body{
+            font-family: Arial;
+            margin:40px;
+            background:#f4f4f4;
+        }
+
+        h1{
+            color:#222;
+        }
+
+        form{
+            background:white;
+            padding:20px;
+            border-radius:10px;
+            margin-bottom:20px;
+        }
+
+        input, select{
+            padding:10px;
+            margin:10px;
+            width:250px;
+        }
+
+        button{
+            padding:10px 20px;
+            background:#007bff;
+            color:white;
+            border:none;
+            border-radius:5px;
+            cursor:pointer;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            background:white;
+        }
+
+        th, td{
+            border:1px solid #ccc;
+            padding:10px;
+            text-align:left;
+        }
+
+        th{
+            background:#222;
+            color:white;
+        }
+
+        .SAFE{
+            background:#c8f7c5;
+        }
+
+        .MODERATE{
+            background:#ffeaa7;
+        }
+
+        .DREAM{
+            background:#fab1a0;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<h1>Namma MBBS Internal Recommendation Tool</h1>
+
+<form method="POST">
+
+    <input
+        type="number"
+        name="rank"
+        placeholder="Enter Rank"
+        required
+    >
+
+    <select name="category" required>
+
+        {% for category in categories %}
+
+        <option value="{{ category }}">
+            {{ category }}
+        </option>
+
+        {% endfor %}
+
+    </select>
+
+    <select name="course" required>
+
+        {% for course in courses %}
+
+        <option value="{{ course }}">
+            {{ course }}
+        </option>
+
+        {% endfor %}
+
+    </select>
+
+    <button type="submit">
+        Get Recommendations
+    </button>
+
+</form>
+
+{% if results %}
+
+<h2>Recommendations</h2>
+
+<table>
+
+    <tr>
+        <th>College</th>
+        <th>Course</th>
+        <th>Category</th>
+        <th>Fees</th>
+        <th>Cutoff Rank</th>
+        <th>Chance</th>
+        <th>Round</th>
+    </tr>
+
+    {% for row in results %}
+
+    <tr class="{{ row.chance }}">
+
+        <td>{{ row.college }}</td>
+
+        <td>{{ row.course }}</td>
+
+        <td>{{ row.category }}</td>
+
+        <td>{{ row.fees }}</td>
+
+        <td>{{ row.rank }}</td>
+
+        <td>{{ row.chance }}</td>
+
+        <td>{{ row.round }}</td>
+
+    </tr>
+
+    {% endfor %}
+
+</table>
+
+{% endif %}
+
+</body>
+</html>
