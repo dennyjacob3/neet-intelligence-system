@@ -97,15 +97,15 @@ p, span, label { color: rgba(255,255,255,0.8) !important; }
 
 
 # =====================================================
-# 2. INTERNAL RELATIVE DATA LOADING ENGINE
+# 2. DATA LOADING ENGINE
 # =====================================================
 @st.cache_data
 def load_data():
     try:
-        # Pulls data securely from your nested folder position
+        # Pulls data from your nested folder position
         df = pd.read_csv("extractor/final_cleaned.csv")
     except FileNotFoundError:
-        # Temporary internal backup fallback layout
+        # Fallback layout if file path breaks
         df = pd.DataFrame({
             'college': ['Bangalore Medical College', 'KMC Mangalore'],
             'course': ['M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE'],
@@ -116,7 +116,7 @@ def load_data():
             'source': ['KEA', 'MCC']
         })
 
-    # Standardize column headers for reliable parsing
+    # Standardize column headers
     df.columns = df.columns.astype(str).str.strip().str.lower()
     
     # Keyword translation engine to map your CSV keys perfectly
@@ -132,12 +132,11 @@ def load_data():
         
     df = df.rename(columns=rename_dict)
     
-    # Strip lingering double-quotes out of dataset rows
+    # Clean string data fields
     for col in df.columns:
         if df[col].dtype == object:
             df[col] = df[col].astype(str).str.replace('"', '', regex=False).str.strip()
 
-    # Apply global string transformations
     if "course" in df.columns:
         df["course"] = df["course"].astype(str).str.upper().str.replace('(', '', regex=False).str.replace(')', '', regex=False)
     if "category" in df.columns:
@@ -159,7 +158,7 @@ df = load_data()
 
 
 # =====================================================
-# 3. SIDEBAR CONTROLS (GROUPED CONTEXT ARCHITECTURE)
+# 3. SIDEBAR CONTROLS
 # =====================================================
 with st.sidebar:
     st.markdown("## 🎯 Student Details")
@@ -187,7 +186,7 @@ with st.sidebar:
 
 
 # =====================================================
-# 4. BRANDING HERO CONTAINER HEADER BLOCK
+# 4. BRANDING HERO CONTAINER
 # =====================================================
 def get_base64_image(image_path):
     try:
@@ -225,7 +224,7 @@ st.markdown(f"""
 
 
 # =====================================================
-# 5. PREDICTIVE PROCESSING MATCH ENGINE LOGIC
+# 5. PREDICTIVE LOGIC CHANCE ALGORITHM
 # =====================================================
 filtered = df_source[df_source["category"] == category].copy() if "category" in df_source.columns else df_source.copy()
 if college_search:
@@ -295,6 +294,7 @@ if len(filtered) > 0:
     </div>
     """, unsafe_allow_html=True)
 
+
     # =====================================================
     # 7. MULTI-ROUND PIVOT DATAFRAME MATRIX VIEW
     # =====================================================
@@ -308,3 +308,62 @@ if len(filtered) > 0:
         for _, row in group.iterrows():
             rnd = str(row["round"]).upper()
             try:
+                rank_num = int(float(row["rank"]))
+            except:
+                rank_num = None
+                
+            if "1" in rnd: r1_val = rank_num
+            elif "2" in rnd: r2_val = rank_num
+            elif "3" in rnd or "MOP" in rnd: r3_val = rank_num
+            elif "STRAY" in rnd: stray_val = rank_num
+            
+        try:
+            final_active_cutoff = max([x for x in [r1_val, r2_val, r3_val, stray_val] if x is not None])
+        except:
+            final_active_cutoff = 0
+            
+        overall_chance = chance_label(rank, final_active_cutoff)
+        
+        matrix_data.append({
+            "Admission Chance": overall_chance,
+            "College Name": college_name,
+            "Round 1": r1_val,
+            "Round 2": r2_val,
+            "Mop-Up": r3_val,
+            "Stray": stray_val,
+            "Annual Fees": int(float(fees_val)) if pd.notna(fees_val) else 0
+        })
+        
+    if matrix_data:
+        matrix_df = pd.DataFrame(matrix_data)
+        matrix_df = matrix_df.sort_values(by="Round 1", ascending=True, na_position="last")
+        styled_df = matrix_df.style.map(color_chance, subset=["Admission Chance"])
+        
+        st.dataframe(
+            styled_df,
+            column_config={
+                "Admission Chance": st.column_config.TextColumn("Admission Chance", width="medium"),
+                "College Name": st.column_config.TextColumn("College Name", width="large"),
+                "Round 1": st.column_config.NumberColumn("Round 1", format="%,d"),
+                "Round 2": st.column_config.NumberColumn("Round 2", format="%,d"),
+                "Mop-Up": st.column_config.NumberColumn("Mop-Up", format="%,d"),
+                "Stray": st.column_config.NumberColumn("Stray", format="%,d"),
+                "Annual Fees": st.column_config.NumberColumn("Annual Fees", format="₹%,d")
+            },
+            use_container_width=True,
+            height=500,
+            hide_index=True
+        )
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.download_button(
+            label="⬇️ Download Results CSV",
+            data=matrix_df.to_csv(index=False),
+            file_name="pg_neet_predictions.csv",
+            mime="text/csv",
+            key="pg_download_btn"
+        )
+    else:
+        st.info("💡 Adjust your sidebar filters. No matching options found inside the dataset for this combination.")
+else:
+    st.info("💡 Adjust your sidebar filters. No matching cutoff targets match this profile currently.")
