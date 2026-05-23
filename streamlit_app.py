@@ -45,23 +45,31 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 }
 
 /* User Text Entry Input Containers */
-input {
-    background-color: rgba(15, 34, 64, 0.95) !important;
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-}
-[data-baseweb="input"] {
-    background-color: rgba(15, 34, 64, 0.95) !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    border-radius: 10px !important;
-}
-[data-baseweb="input"] input {
-    background-color: transparent !important;
-    color: white !important;
-    -webkit-text-fill-color: white !important;
+/* ==========================================
+   PASTE THIS NEW FIXED PIECE RIGHT HERE:
+   ========================================== */
+
+/* Fixes the whited-out text inside text and number input boxes */
+input[type="text"], input[type="number"], [data-baseweb="input"] input {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    background-color: #0F2240 !important;
     caret-color: #F15A24 !important;
 }
 
+/* Forces the container background to remain dark deep blue */
+[data-baseweb="input"] {
+    background-color: #0F2240 !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 10px !important;
+}
+
+/* Adjusts the inner spin buttons so they don't cause rendering quirks */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
 /* Glassmorphism Dashboard Metric Cards */
 .glass-card {
     background: rgba(255,255,255,0.05) !important;
