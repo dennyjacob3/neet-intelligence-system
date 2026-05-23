@@ -158,33 +158,31 @@ df = load_data()
 
 
 # =====================================================
-# 3. SIDEBAR CONTROLS
+# 3. SIDEBAR CONTROLS (INDEPENDENT SELECTION ENGINE)
 # =====================================================
 with st.sidebar:
     st.markdown("## 🎯 Student Details")
     rank = st.number_input("Enter AIR Rank", min_value=1, max_value=300000, value=14000, step=100, key="pg_user_rank")
 
+    # Pull unique options independently from the main master dataframe 'df'
     course_options = sorted(df["course"].dropna().unique()) if "course" in df.columns else []
     course = st.selectbox("Course Specialty", course_options, key="pg_user_course")
-    df_course = df[df["course"] == course] if "course" in df.columns else df
 
     st.divider()
     st.markdown("## 🏛️ Counseling Details")
-    counseling_options = sorted(df_course["source"].dropna().unique()) if "source" in df_course.columns else ["MCC"]
+    counseling_options = sorted(df["source"].dropna().unique()) if "source" in df.columns else ["MCC", "KEA"]
     counseling = st.selectbox("Counseling Type", counseling_options, key="pg_user_source")
-    df_source = df_course[df_course["source"] == counseling] if "source" in df_course.columns else df_course
 
     st.divider()
     st.markdown("## 👥 Seat Category")
-    category_options = sorted(df_source["category"].dropna().unique()) if "category" in df_source.columns else []
+    category_options = sorted(df["category"].dropna().unique()) if "category" in df.columns else []
     category = st.selectbox("Category Quota", category_options, key="pg_user_cat")
 
     st.divider()
     st.markdown("## 🔍 Advanced Filters")
     college_search = st.text_input("Search College Name", placeholder="e.g., Bangalore Medical...", key="pg_user_search")
     near_miss = st.checkbox("Include Near Miss colleges", value=True, key="pg_user_near_miss")
-
-
+    
 # =====================================================
 # 4. BRANDING HERO CONTAINER
 # =====================================================
