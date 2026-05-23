@@ -24,7 +24,7 @@ st.markdown("""
 # Injecting Global CSS Architecture from your UG App Engine
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800;900&display=swap');
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 
@@ -98,8 +98,10 @@ p, span, label { color: rgba(255,255,255,0.8) !important; }
 @st.cache_data
 def load_data():
     try:
+        # Assumes your cleaned csv repository dataset is sitting at root
         df = pd.read_csv("final_cleaned.csv")
     except FileNotFoundError:
+        # Fallback demonstration dataset tracking matrix elements
         df = pd.DataFrame({
             'college': ['Bangalore Medical College', 'Bangalore Medical College', 'KMC Mangalore', 'St. Johns Medical College'],
             'course': ['M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE'],
@@ -134,40 +136,42 @@ df = load_data()
 # =====================================================
 with st.sidebar:
     st.markdown("## 🎯 Student Details")
-    rank = st.number_input("Enter AIR Rank", min_value=1, max_value=300000, value=14000, step=100)
+    # Setting an explicit key ensures state reactivity works correctly on the cloud server
+    rank = st.number_input("Enter AIR Rank", min_value=1, max_value=300000, value=14000, step=100, key="pg_user_rank")
 
     course_options = sorted(df["course"].dropna().unique())
-    course = st.selectbox("Course Specialty", course_options)
+    course = st.selectbox("Course Specialty", course_options, key="pg_user_course")
     df_course = df[df["course"] == course]
 
     st.divider()
     st.markdown("## 🏛️ Counseling Details")
     counseling_options = sorted(df_course["source"].dropna().unique())
-    counseling = st.selectbox("Counseling Type", counseling_options)
+    counseling = st.selectbox("Counseling Type", counseling_options, key="pg_user_source")
     df_source = df_course[df_course["source"] == counseling]
 
     st.divider()
     st.markdown("## 👥 Seat Category")
     category_options = sorted(df_source["category"].dropna().unique())
-    category = st.selectbox("Category Quota", category_options)
+    category = st.selectbox("Category Quota", category_options, key="pg_user_cat")
 
     st.divider()
     st.markdown("## 🔍 Advanced Filters")
-    college_search = st.text_input("Search College Name", placeholder="e.g., Bangalore Medical...")
-    near_miss = st.checkbox("Include Near Miss colleges", value=True)
+    college_search = st.text_input("Search College Name", placeholder="e.g., Bangalore Medical...", key="pg_user_search")
+    near_miss = st.checkbox("Include Near Miss colleges", value=True, key="pg_user_near_miss")
 
 
 # =====================================================
-# 4. BRANDING HERO HERO CONTAINER HEADER BLOCK
+# 4. BRANDING HERO CONTAINER HEADER BLOCK
 # =====================================================
 def get_base64_image(image_path):
     try:
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
-    except FileNotFoundError:
+    except:
         return None
 
-img_base64 = get_base64_image("../assets/logo.png")
+# Looking for logo file in root or common assets structures
+img_base64 = get_base64_image("logo.png") or get_base64_image("assets/logo.png")
 
 if img_base64:
     logo_img = f'<img src="data:image/png;base64,{img_base64}" style="height:120px;width:120px;object-fit:cover;border-radius:50%;border:3px solid rgba(241,90,36,0.6);box-shadow:0 8px 32px rgba(0,0,0,0.5);background:white;padding:8px;">'
@@ -196,7 +200,7 @@ st.markdown(f"""
 
 
 # =====================================================
-# 5. PREDICTIVE PROCESSING MATCH ENGINE logic
+# 5. PREDICTIVE PROCESSING MATCH ENGINE LOGIC
 # =====================================================
 filtered = df_source[df_source["category"] == category].copy()
 if college_search:
@@ -267,7 +271,7 @@ if len(filtered) > 0:
 
 
     # =====================================================
-    # 7. MULTI-ROUND PIVOT DATAFRAME MATRIX MATRIX VIEW
+    # 7. MULTI-ROUND PIVOT DATAFRAME MATRIX VIEW
     # =====================================================
     st.markdown("### 📊 Round-by-Round Cutoff Matrix")
 
@@ -277,7 +281,7 @@ if len(filtered) > 0:
         fees_val = group["fees"].iloc[0] if "fees" in group.columns else 0
         
         for _, row in group.iterrows():
-            rnd = str(row["round"])
+            rnd = str(row["round"]).upper()
             if "1" in rnd: r1_val = int(row["rank"])
             elif "2" in rnd: r2_val = int(row["rank"])
             elif "3" in rnd or "MOP" in rnd: r3_val = int(row["rank"])
@@ -324,8 +328,9 @@ if len(filtered) > 0:
         label="⬇️ Download Results CSV",
         data=matrix_df.to_csv(index=False),
         file_name="pg_neet_predictions.csv",
-        mime="text/csv"
+        mime="text/csv",
+        key="pg_download_btn"
     )
 
 else:
-    st.info("💡 Adjust your sidebar filters. No matching cutoff matches this targets profile metrics currently.")
+    st.info("💡 Adjust your sidebar filters. No matching cutoff targets match this profile currently.")
