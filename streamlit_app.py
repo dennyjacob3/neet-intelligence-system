@@ -224,45 +224,172 @@ st.markdown(f"""
 
 
 # =====================================================
-# 5. PREDICTIVE LOGIC CHANCE ALGORITHM
+# 5. SMART FILTER ENGINE
 # =====================================================
+
 filtered = df.copy()
 
-if "course" in filtered.columns and course:
-    filtered = filtered[filtered["course"].astype(str).str.upper() == str(course).upper()]
+# -----------------------------
+# CLEAN COURSE VALUES
+# -----------------------------
 
-if "source" in filtered.columns and counseling:
-    filtered = filtered[filtered["source"].astype(str).str.upper() == str(counseling).upper()]
+filtered["course_clean"] = (
+    filtered["course"]
+    .astype(str)
+    .str.upper()
+    .str.replace(".", "", regex=False)
+    .str.replace("(", "", regex=False)
+    .str.replace(")", "", regex=False)
+    .str.replace("-", " ", regex=False)
+    .str.replace("&", "AND", regex=False)
+    .str.replace("  ", " ", regex=False)
+    .str.strip()
+)
 
-if "category" in filtered.columns and category:
-    filtered = filtered[filtered["category"].astype(str).str.upper() == str(category).upper()]
+selected_course_clean = (
+    str(course)
+    .upper()
+    .replace(".", "")
+    .replace("(", "")
+    .replace(")", "")
+    .replace("-", " ")
+    .replace("&", "AND")
+    .strip()
+)
+
+# FLEXIBLE COURSE MATCH
+filtered = filtered[
+    filtered["course_clean"]
+    .str.contains(selected_course_clean, na=False)
+]
+
+# -----------------------------
+# SOURCE FILTER
+# -----------------------------
+
+filtered["source_clean"] = (
+    filtered["source"]
+    .astype(str)
+    .str.upper()
+    .str.strip()
+)
+
+filtered = filtered[
+    filtered["source_clean"] == str(counseling).upper()
+]
+
+# -----------------------------
+# CATEGORY FILTER
+# -----------------------------
+
+filtered["category_clean"] = (
+    filtered["category"]
+    .astype(str)
+    .str.upper()
+    .str.strip()
+)
+
+filtered = filtered[
+    filtered["category_clean"] == str(category).upper()
+]
+
+# -----------------------------
+# COLLEGE SEARCH
+# -----------------------------
 
 if college_search:
-    filtered = filtered[filtered["college"].str.contains(college_search, case=False, na=False)]
+
+    filtered = filtered[
+        filtered["college"]
+        .astype(str)
+        .str.contains(
+            college_search,
+            case=False,
+            na=False
+        )
+    ]
+
+# -----------------------------
+# CLEAN NUMERIC RANKS
+# -----------------------------
+
+filtered["rank"] = pd.to_numeric(
+    filtered["rank"],
+    errors="coerce"
+)
+
+filtered = filtered.dropna(subset=["rank"])
+
+# -----------------------------
+# CHANCE ENGINE
+# -----------------------------
 
 def chance_label(user_rank, cutoff):
+
     try:
-        if pd.isna(cutoff) or cutoff == "" or str(cutoff).upper() == "NONE":
+
+        if pd.isna(cutoff):
             return "❌ Out of Range"
-        cutoff_val = float(str(cutoff).replace(',', '').strip())
+
+        cutoff_val = float(cutoff)
+
     except:
+
         return "❌ Out of Range"
-        
+
     if user_rank <= cutoff_val:
-        m = (cutoff_val - user_rank) / user_rank * 100
-        if m >= 20: return "✅ Safe"
-        if m >= 5:  return "🟡 Likely"
-        return "⚠️ Borderline"
-    if (user_rank - cutoff_val) / user_rank * 100 <= 15: return "🔴 Near Miss"
+
+        margin = (
+            (cutoff_val - user_rank)
+            / user_rank
+        ) * 100
+
+        if margin >= 20:
+            return "✅ Safe"
+
+        elif margin >= 5:
+            return "🟡 Likely"
+
+        else:
+            return "⚠️ Borderline"
+
+    diff = (
+        (user_rank - cutoff_val)
+        / user_rank
+    ) * 100
+
+    if diff <= 15:
+        return "🔴 Near Miss"
+
     return "❌ Out of Range"
 
-def color_chance(val):
-    if "Safe" in str(val): return "background-color:#0a3d1f;color:#4ade80;font-weight:700;border-radius:6px;"
-    if "Likely" in str(val): return "background-color:#3d2e00;color:#fbbf24;font-weight:700;border-radius:6px;"
-    if "Borderline" in str(val): return "background-color:#3d1500;color:#fb923c;font-weight:700;border-radius:6px;"
-    if "Near Miss" in str(val): return "background-color:#3d0a0a;color:#f87171;font-weight:700;border-radius:6px;"
-    return "color:rgba(255,255,255,0.4);"
+# APPLY CHANCE
+filtered["chance"] = filtered["rank"].apply(
+    lambda x: chance_label(rank, x)
+)
 
+# -----------------------------
+# NEAR MISS FILTER
+# -----------------------------
+
+allowed_chances = {
+    "✅ Safe",
+    "🟡 Likely",
+    "⚠️ Borderline"
+}
+
+if near_miss:
+    allowed_chances.add("🔴 Near Miss")
+
+filtered = filtered[
+    filtered["chance"].isin(allowed_chances)
+]
+
+# SORT RESULTS
+filtered = filtered.sort_values(
+    by="rank",
+    ascending=True
+)
 
 # =====================================================
 # 6. CARD VIEWS GENERATION AND DISPLAY ROW
