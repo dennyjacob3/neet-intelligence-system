@@ -102,10 +102,26 @@ p, span, label { color: rgba(255,255,255,0.8) !important; }
 @st.cache_data
 def load_data():
     try:
-        # Pulls data from your nested folder position
+        # Read the file normally first
         df = pd.read_csv("extractor/final_cleaned.csv")
+        
+        # FIX: If the CSV has bad outer quotes, it loads as 1 column. Let's fix it on the fly!
+        if df.shape[1] == 1:
+            col_name = df.columns[0]
+            # Re-split the single column into proper multiple columns
+            all_rows = []
+            # Extract headers from the single column name if it contains commas
+            headers = [h.strip().lower() for h in col_name.replace('"', '').split(',')]
+            
+            for val in df[col_name]:
+                row_split = [r.strip() for r in str(val).replace('"', '').split(',')]
+                # Pad row if lengths don't match exactly
+                while len(row_split) < len(headers):
+                    row_split.append(np.nan)
+                all_rows.append(row_split[:len(headers)])
+                
+            df = pd.DataFrame(all_rows, columns=headers)
     except FileNotFoundError:
-        # Fallback layout if file path breaks
         df = pd.DataFrame({
             'college': ['Bangalore Medical College', 'KMC Mangalore'],
             'course': ['M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE'],
@@ -132,10 +148,12 @@ def load_data():
         
     df = df.rename(columns=rename_dict)
     
-    # Clean string data fields
+    # Clean up fields, strip residual quotes, and handle empty spaces safely
     for col in df.columns:
         if df[col].dtype == object:
             df[col] = df[col].astype(str).str.replace('"', '', regex=False).str.strip()
+            # Replace empty string lookups with NaN
+            df[col] = df[col].replace('', np.nan)
 
     if "course" in df.columns:
         df["course"] = df["course"].astype(str).str.upper().str.replace('(', '', regex=False).str.replace(')', '', regex=False)
@@ -153,10 +171,6 @@ def load_data():
         df["source"] = "MCC"
         
     return df
-
-df = load_data()
-
-
 # =====================================================
 # 3. SIDEBAR CONTROLS (INDEPENDENT SELECTION ENGINE)
 # =====================================================
