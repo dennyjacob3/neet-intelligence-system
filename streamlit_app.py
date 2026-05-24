@@ -102,29 +102,13 @@ p, span, label { color: rgba(255,255,255,0.8) !important; }
 @st.cache_data
 def load_data():
     try:
-        # Read the file normally first
+        # Load directly using pandas' standard, reliable native CSV parser
         df = pd.read_csv("extractor/final_cleaned.csv")
-        
-        # FIX: If the CSV has bad outer quotes, it loads as 1 column. Let's fix it on the fly!
-        if df.shape[1] == 1:
-            col_name = df.columns[0]
-            # Re-split the single column into proper multiple columns
-            all_rows = []
-            # Extract headers from the single column name if it contains commas
-            headers = [h.strip().lower() for h in col_name.replace('"', '').split(',')]
-            
-            for val in df[col_name]:
-                row_split = [r.strip() for r in str(val).replace('"', '').split(',')]
-                # Pad row if lengths don't match exactly
-                while len(row_split) < len(headers):
-                    row_split.append(np.nan)
-                all_rows.append(row_split[:len(headers)])
-                
-            df = pd.DataFrame(all_rows, columns=headers)
     except FileNotFoundError:
-        df = pd.DataFrame({
+        # Emergency backup structure if file can't be reached
+        return pd.DataFrame({
             'college': ['Bangalore Medical College', 'KMC Mangalore'],
-            'course': ['M.D. GENERAL MEDICINE', 'M.D. GENERAL MEDICINE'],
+            'course': ['M.D. (GENERAL MEDICINE)', 'M.D. (GENERAL MEDICINE)'],
             'category': ['GM', 'GM'],
             'fees': [115000, 750000],
             'rank': [12000, 28000],
@@ -132,10 +116,10 @@ def load_data():
             'source': ['KEA', 'MCC']
         })
 
-    # Standardize column headers
+    # Standardize column headers to lowercase
     df.columns = df.columns.astype(str).str.strip().str.lower()
     
-    # Keyword translation engine to map your CSV keys perfectly
+    # Map column variants perfectly
     rename_dict = {}
     for col in df.columns:
         if 'college' in col: rename_dict[col] = 'college'
@@ -148,15 +132,13 @@ def load_data():
         
     df = df.rename(columns=rename_dict)
     
-    # Clean up fields, strip residual quotes, and handle empty spaces safely
+    # Clean textual fields and retain absolute pristine typography structure
     for col in df.columns:
         if df[col].dtype == object:
             df[col] = df[col].astype(str).str.replace('"', '', regex=False).str.strip()
-            # Replace empty string lookups with NaN
-            df[col] = df[col].replace('', np.nan)
 
     if "course" in df.columns:
-        df["course"] = df["course"].astype(str).str.upper().str.replace('(', '', regex=False).str.replace(')', '', regex=False)
+        df["course"] = df["course"].astype(str).str.upper()
     if "category" in df.columns:
         df["category"] = df["category"].astype(str).str.upper()
     if "college" in df.columns:
@@ -171,6 +153,11 @@ def load_data():
         df["source"] = "MCC"
         
     return df
+
+# Initialize dataframe globally so that Section 3 can read it instantly!
+df = load_data()
+
+
 # =====================================================
 # 3. SIDEBAR CONTROLS (INDEPENDENT SELECTION ENGINE)
 # =====================================================
@@ -178,7 +165,7 @@ with st.sidebar:
     st.markdown("## 🎯 Student Details")
     rank = st.number_input("Enter AIR Rank", min_value=1, max_value=300000, value=14000, step=100, key="pg_user_rank")
 
-    # Pull unique options independently from the main master dataframe 'df'
+    # Read distinct list options directly from global df
     course_options = sorted(df["course"].dropna().unique()) if "course" in df.columns else []
     course = st.selectbox("Course Specialty", course_options, key="pg_user_course")
 
@@ -196,7 +183,8 @@ with st.sidebar:
     st.markdown("## 🔍 Advanced Filters")
     college_search = st.text_input("Search College Name", placeholder="e.g., Bangalore Medical...", key="pg_user_search")
     near_miss = st.checkbox("Include Near Miss colleges", value=True, key="pg_user_near_miss")
-    
+
+
 # =====================================================
 # 4. BRANDING HERO CONTAINER
 # =====================================================
@@ -238,7 +226,6 @@ st.markdown(f"""
 # =====================================================
 # 5. PREDICTIVE LOGIC CHANCE ALGORITHM
 # =====================================================
-# Clean filtering to ensure case-insensitivity and zero space mismatches
 filtered = df.copy()
 
 if "course" in filtered.columns and course:
@@ -274,232 +261,4 @@ def color_chance(val):
     if "Likely" in str(val): return "background-color:#3d2e00;color:#fbbf24;font-weight:700;border-radius:6px;"
     if "Borderline" in str(val): return "background-color:#3d1500;color:#fb923c;font-weight:700;border-radius:6px;"
     if "Near Miss" in str(val): return "background-color:#3d0a0a;color:#f87171;font-weight:700;border-radius:6px;"
-    return "color:rgba(255,255,255,0.4);"
-
-
-# =====================================================
-# 6. CARD VIEWS GENERATION AND DISPLAY ROW
-# =====================================================
-if len(filtered) > 0 and "rank" in filtered.columns:
-    filtered["chance"] = filtered["rank"].apply(lambda x: chance_label(rank, x))
-    
-    allowed_chances = {"✅ Safe", "🟡 Likely", "⚠️ Borderline"}
-    if near_miss:
-        allowed_chances.add("🔴 Near Miss")
-    filtered = filtered[filtered["chance"].isin(allowed_chances)]
-
-if len(filtered) > 0:
-    total_options = filtered["college"].nunique() if "college" in filtered.columns else 0
-    safe_count = filtered[filtered["chance"] == "✅ Safe"]["college"].nunique() if "college" in filtered.columns else 0
-    likely_count = filtered[filtered["chance"] == "🟡 Likely"]["college"].nunique() if "college" in filtered.columns else 0
-    border_count = filtered[filtered["chance"] == "⚠️ Borderline"]["college"].nunique() if "college" in filtered.columns else 0
-    near_count = filtered[filtered["chance"] == "🔴 Near Miss"]["college"].nunique() if "college" in filtered.columns else 0
-
-    st.markdown(f"""
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 0 28px 0;">
-      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #4A90D9;">
-        <div style="font-size:1.8rem;font-weight:900;color:white;">{total_options}</div>
-        <div style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Total Options</div>
-      </div>
-      <div style="background:rgba(0,200,81,0.1);border:1px solid rgba(0,200,81,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #00C851;">
-        <div style="font-size:1.8rem;font-weight:900;color:#4ade80;">{safe_count}</div>
-        <div style="font-size:0.7rem;color:#4ade80;font-weight:600;text-transform:uppercase;letter-spacing:1px;">✅ Safe</div>
-      </div>
-      <div style="background:rgba(255,179,0,0.1);border:1px solid rgba(255,179,0,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #FFB300;">
-        <div style="font-size:1.8rem;font-weight:900;color:#fbbf24;">{likely_count}</div>
-        <div style="font-size:0.7rem;color:#fbbf24;font-weight:600;text-transform:uppercase;letter-spacing:1px;">🟡 Likely</div>
-      </div>
-      <div style="background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #fb923c;">
-        <div style="font-size:1.8rem;font-weight:900;color:#fb923c;">{border_count}</div>
-        <div style="font-size:0.7rem;color:#fb923c;font-weight:600;text-transform:uppercase;letter-spacing:1px;">⚠️ Borderline</div>
-      </div>
-      <div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #f87171;">
-        <div style="font-size:1.8rem;font-weight:900;color:#f87171;">{near_count}</div>
-        <div style="font-size:0.7rem;color:#f87171;font-weight:600;text-transform:uppercase;letter-spacing:1px;">🔴 Near Miss</div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-
-    # =====================================================
-    # 7. MULTI-ROUND PIVOT DATAFRAME MATRIX VIEW
-    # =====================================================
-    st.markdown("### 📊 Round-by-Round Cutoff Matrix")
-
-    matrix_data = []
-    for college_name, group in filtered.groupby("college"):
-        r1_val = r2_val = r3_val = stray_val = None
-        fees_val = group["fees"].iloc[0] if "fees" in group.columns else 0
-        
-        for _, row in group.iterrows():
-            rnd = str(row["round"]).upper()
-            try:
-                if pd.isna(row["rank"]) or str(row["rank"]).upper() == "NONE":
-                    rank_num = None
-                else:
-                    rank_num = int(float(str(row["rank"]).replace(',', '').strip()))
-            except:
-                rank_num = None
-                
-            if "1" in rnd: r1_val = rank_num
-            elif "2" in rnd: r2_val = rank_num
-            elif "3" in rnd or "MOP" in rnd: r3_val = rank_num
-            elif "STRAY" in rnd: stray_val = rank_num
-            
-        # Get active high range to compute structural eligibility status 
-        valid_ranks = [x for x in [r1_val, r2_val, r3_val, stray_val] if x is not None]
-        final_active_cutoff = max(valid_ranks) if valid_ranks else 0
-            
-        overall_chance = chance_label(rank, final_active_cutoff)
-        
-        matrix_data.append({
-            "Admission Chance": overall_chance,
-            "College Name": college_name,
-            "Round 1": r1_val,
-            "Round 2": r2_val,
-            "Mop-Up": r3_val,
-            "Stray": stray_val,
-            "Annual Fees": int(float(str(fees_val).replace(',', '').strip())) if pd.notna(fees_val) and str(fees_val).strip() != "" else 0
-        })
-        
-    if matrix_data:
-        matrix_df = pd.DataFrame(matrix_data)
-        
-        # Sort reasonably based on available cutoffs
-        if "Round 1" in matrix_df.columns:
-            matrix_df = matrix_df.sort_values(by="Round 1", ascending=True, na_position="last")
-            
-        styled_df = matrix_df.style.map(color_chance, subset=["Admission Chance"])
-        
-        st.dataframe(
-            styled_df,
-            column_config={
-                "Admission Chance": st.column_config.TextColumn("Admission Chance", width="medium"),
-                "College Name": st.column_config.TextColumn("College Name", width="large"),
-                "Round 1": st.column_config.NumberColumn("Round 1", format="%d"),
-                "Round 2": st.column_config.NumberColumn("Round 2", format="%d"),
-                "Mop-Up": st.column_config.NumberColumn("Mop-Up", format="%d"),
-                "Stray": st.column_config.NumberColumn("Stray", format="%d"),
-                "Annual Fees": st.column_config.NumberColumn("Annual Fees", format="₹%d")
-            },
-            use_container_width=True,
-            height=500,
-            hide_index=True
-        )
-
-# =====================================================
-# 6. CARD VIEWS GENERATION AND DISPLAY ROW
-# =====================================================
-if len(filtered) > 0 and "rank" in filtered.columns:
-    filtered["chance"] = filtered["rank"].apply(lambda x: chance_label(rank, x))
-    
-    allowed_chances = {"✅ Safe", "🟡 Likely", "⚠️ Borderline"}
-    if near_miss:
-        allowed_chances.add("🔴 Near Miss")
-    filtered = filtered[filtered["chance"].isin(allowed_chances)]
-
-if len(filtered) > 0:
-    total_options = filtered["college"].nunique() if "college" in filtered.columns else 0
-    safe_count = filtered[filtered["chance"] == "✅ Safe"]["college"].nunique() if "college" in filtered.columns else 0
-    likely_count = filtered[filtered["chance"] == "🟡 Likely"]["college"].nunique() if "college" in filtered.columns else 0
-    border_count = filtered[filtered["chance"] == "⚠️ Borderline"]["college"].nunique() if "college" in filtered.columns else 0
-    near_count = filtered[filtered["chance"] == "🔴 Near Miss"]["college"].nunique() if "college" in filtered.columns else 0
-
-    st.markdown(f"""
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 0 28px 0;">
-      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #4A90D9;">
-        <div style="font-size:1.8rem;font-weight:900;color:white;">{total_options}</div>
-        <div style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Total Options</div>
-      </div>
-      <div style="background:rgba(0,200,81,0.1);border:1px solid rgba(0,200,81,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #00C851;">
-        <div style="font-size:1.8rem;font-weight:900;color:#4ade80;">{safe_count}</div>
-        <div style="font-size:0.7rem;color:#4ade80;font-weight:600;text-transform:uppercase;letter-spacing:1px;">✅ Safe</div>
-      </div>
-      <div style="background:rgba(255,179,0,0.1);border:1px solid rgba(255,179,0,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #FFB300;">
-        <div style="font-size:1.8rem;font-weight:900;color:#fbbf24;">{likely_count}</div>
-        <div style="font-size:0.7rem;color:#fbbf24;font-weight:600;text-transform:uppercase;letter-spacing:1px;">🟡 Likely</div>
-      </div>
-      <div style="background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #fb923c;">
-        <div style="font-size:1.8rem;font-weight:900;color:#fb923c;">{border_count}</div>
-        <div style="font-size:0.7rem;color:#fb923c;font-weight:600;text-transform:uppercase;letter-spacing:1px;">⚠️ Borderline</div>
-      </div>
-      <div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:14px;padding:16px;text-align:center;border-top:3px solid #f87171;">
-        <div style="font-size:1.8rem;font-weight:900;color:#f87171;">{near_count}</div>
-        <div style="font-size:0.7rem;color:#f87171;font-weight:600;text-transform:uppercase;letter-spacing:1px;">🔴 Near Miss</div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-
-    # =====================================================
-    # 7. MULTI-ROUND PIVOT DATAFRAME MATRIX VIEW
-    # =====================================================
-    st.markdown("### 📊 Round-by-Round Cutoff Matrix")
-
-    matrix_data = []
-    for college_name, group in filtered.groupby("college"):
-        r1_val = r2_val = r3_val = stray_val = None
-        fees_val = group["fees"].iloc[0] if "fees" in group.columns else 0
-        
-        for _, row in group.iterrows():
-            rnd = str(row["round"]).upper()
-            try:
-                rank_num = int(float(row["rank"]))
-            except:
-                rank_num = None
-                
-            if "1" in rnd: r1_val = rank_num
-            elif "2" in rnd: r2_val = rank_num
-            elif "3" in rnd or "MOP" in rnd: r3_val = rank_num
-            elif "STRAY" in rnd: stray_val = rank_num
-            
-        try:
-            final_active_cutoff = max([x for x in [r1_val, r2_val, r3_val, stray_val] if x is not None])
-        except:
-            final_active_cutoff = 0
-            
-        overall_chance = chance_label(rank, final_active_cutoff)
-        
-        matrix_data.append({
-            "Admission Chance": overall_chance,
-            "College Name": college_name,
-            "Round 1": r1_val,
-            "Round 2": r2_val,
-            "Mop-Up": r3_val,
-            "Stray": stray_val,
-            "Annual Fees": int(float(fees_val)) if pd.notna(fees_val) else 0
-        })
-        
-    if matrix_data:
-        matrix_df = pd.DataFrame(matrix_data)
-        matrix_df = matrix_df.sort_values(by="Round 1", ascending=True, na_position="last")
-        styled_df = matrix_df.style.map(color_chance, subset=["Admission Chance"])
-        
-        st.dataframe(
-            styled_df,
-            column_config={
-                "Admission Chance": st.column_config.TextColumn("Admission Chance", width="medium"),
-                "College Name": st.column_config.TextColumn("College Name", width="large"),
-                "Round 1": st.column_config.NumberColumn("Round 1", format="%,d"),
-                "Round 2": st.column_config.NumberColumn("Round 2", format="%,d"),
-                "Mop-Up": st.column_config.NumberColumn("Mop-Up", format="%,d"),
-                "Stray": st.column_config.NumberColumn("Stray", format="%,d"),
-                "Annual Fees": st.column_config.NumberColumn("Annual Fees", format="₹%,d")
-            },
-            use_container_width=True,
-            height=500,
-            hide_index=True
-        )
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.download_button(
-            label="⬇️ Download Results CSV",
-            data=matrix_df.to_csv(index=False),
-            file_name="pg_neet_predictions.csv",
-            mime="text/csv",
-            key="pg_download_btn"
-        )
-    else:
-        st.info("💡 Adjust your sidebar filters. No matching options found inside the dataset for this combination.")
-else:
-    st.info("💡 Adjust your sidebar filters. No matching cutoff targets match this profile currently.")
+    return "color:rgba(255,255,25
