@@ -132,7 +132,7 @@ def load_data():
         
     df = df.rename(columns=rename_dict)
     
-    # Clean textual fields and retain absolute pristine typography structure
+    # Clean textual fields and remove wrapping quotes
     for col in df.columns:
         if df[col].dtype == object:
             df[col] = df[col].astype(str).str.replace('"', '', regex=False).str.strip()
@@ -224,41 +224,4 @@ st.markdown(f"""
 
 
 # =====================================================
-# 5. PREDICTIVE LOGIC CHANCE ALGORITHM
-# =====================================================
-filtered = df.copy()
-
-if "course" in filtered.columns and course:
-    filtered = filtered[filtered["course"].astype(str).str.upper() == str(course).upper()]
-
-if "source" in filtered.columns and counseling:
-    filtered = filtered[filtered["source"].astype(str).str.upper() == str(counseling).upper()]
-
-if "category" in filtered.columns and category:
-    filtered = filtered[filtered["category"].astype(str).str.upper() == str(category).upper()]
-
-if college_search:
-    filtered = filtered[filtered["college"].str.contains(college_search, case=False, na=False)]
-
-def chance_label(user_rank, cutoff):
-    try:
-        if pd.isna(cutoff) or cutoff == "" or str(cutoff).upper() == "NONE":
-            return "❌ Out of Range"
-        cutoff_val = float(str(cutoff).replace(',', '').strip())
-    except:
-        return "❌ Out of Range"
-        
-    if user_rank <= cutoff_val:
-        m = (cutoff_val - user_rank) / user_rank * 100
-        if m >= 20: return "✅ Safe"
-        if m >= 5:  return "🟡 Likely"
-        return "⚠️ Borderline"
-    if (user_rank - cutoff_val) / user_rank * 100 <= 15: return "🔴 Near Miss"
-    return "❌ Out of Range"
-
-def color_chance(val):
-    if "Safe" in str(val): return "background-color:#0a3d1f;color:#4ade80;font-weight:700;border-radius:6px;"
-    if "Likely" in str(val): return "background-color:#3d2e00;color:#fbbf24;font-weight:700;border-radius:6px;"
-    if "Borderline" in str(val): return "background-color:#3d1500;color:#fb923c;font-weight:700;border-radius:6px;"
-    if "Near Miss" in str(val): return "background-color:#3d0a0a;color:#f87171;font-weight:700;border-radius:6px;"
-    return "color:rgba(255,255,25
+#
