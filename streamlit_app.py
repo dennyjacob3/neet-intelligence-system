@@ -1,4 +1,13 @@
 import pandas as pd
+import base64
+from pathlib import Path
+
+def get_logo_b64():
+    for p in ["logo.jpg","logo.png","assets/logo.jpg","assets/logo.png"]:
+        try: return base64.b64encode(Path(p).read_bytes()).decode()
+        except: pass
+    return None
+
 import streamlit as st
 
 # ══════════════════════════════════════════════════════
@@ -176,13 +185,23 @@ badge_map = {"mcc": ("MCC – All India Quota", "badge-mcc"),
              "ins": ("KEA – Inservice", "badge-ins")}
 badge_text, badge_cls_name = badge_map[badge_cls]
 
-st.markdown(f"""
-<div class="app-header">
-    <span class="counsel-badge {badge_cls_name}">{badge_text}</span>
-    <h1>🩺 Namma MBBS – PG NEET Predictor</h1>
-    <p>Karnataka & All India Quota · Round-by-Round Cutoff Intelligence · 2025</p>
-</div>
-""", unsafe_allow_html=True)
+logo_b64 = get_logo_b64()
+hc1, hc2 = st.columns([1, 5])
+with hc1:
+    if logo_b64:
+        st.image(f"data:image/jpeg;base64,{logo_b64}", width=130)
+with hc2:
+    st.markdown(
+        "<div style='background:linear-gradient(135deg,#0c1445,#1e3a8a,#1d4ed8);"
+        "padding:1.4rem 2rem;border-radius:16px;'>"
+        f"<span class='counsel-badge {badge_cls_name}'>{badge_text}</span>"
+        "<h1 style='color:white;font-size:1.6rem;font-weight:800;margin:6px 0 4px;'>"
+        "Namma MBBS – PG NEET Predictor</h1>"
+        "<p style='color:#93c5fd;margin:0;font-size:0.87rem;'>"
+        "Karnataka & All India Quota · Round-by-Round Cutoff Intelligence · 2025"
+        "</p></div>",
+        unsafe_allow_html=True
+    )
 
 
 # ══════════════════════════════════════════════════════
